@@ -6,12 +6,12 @@ import (
 )
 
 type DigitalOceanRepository struct {
-	Logger domain.Logger
+	LogManager domain.LogManager
 }
 
 func (repo *DigitalOceanRepository) ListInstances() ([]api.Instance, error) {
 	var instances []api.Instance
 
-	repo.Logger.Info("Listed all instances from digital ocean")
-	return instances, nil
+	err := repo.LogManager.Log(domain.Info, "Listed all instances from digital ocean")
+	return instances, err
 }

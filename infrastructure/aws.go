@@ -3,18 +3,15 @@ package infrastructure
 import (
 	"github.com/acazau/cloud-manager/domain"
 	api "github.com/acazau/cloud-manager/usecases/api/v0"
-	"github.com/goamz/goamz/aws"
 )
 
-type AuthFunc func() (auth aws.Auth, err error)
-
 type AWSRepository struct {
-	Logger domain.Logger
+	LogManager domain.LogManager
 }
 
 func (repo *AWSRepository) ListInstances() ([]api.Instance, error) {
 	var instances []api.Instance
 
-	repo.Logger.Info("Listed all instances from aws")
-	return instances, nil
+	err := repo.LogManager.Log(domain.Info, "Listed all instances from aws")
+	return instances, err
 }
