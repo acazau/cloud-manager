@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/acazau/cloud-manager/domain"
 	"github.com/acazau/cloud-manager/infrastructure"
-	console "github.com/acazau/cloud-manager/infrastructure/logger"
+	logging "github.com/acazau/cloud-manager/infrastructure/logger"
 	"github.com/acazau/cloud-manager/interfaces"
 	"github.com/gorilla/mux"
 	"net/http"
@@ -16,23 +16,21 @@ import (
 var (
 	_port              = flag.Int("port", 8090, "Port for web server")
 	_host              = flag.String("host", "localhost", "Address for web server")
-	_logger            = new(domain.Logger)
-	_webserviceHandler = new(interfaces.WebserviceHandler)
+	_logger            = new(domain.LogManager)
+	_webserviceHandler = new(interfaces.WebServiceHandler)
 )
 
 func init() {
-	_logger.ILogger = &console.Logger{}
-	aws := &infrastructure.AWSRepository{}
-	do := &infrastructure.DigitalOceanRepository{}
-	// Inject logger into aws service
-	aws.Logger = *_logger
-	// Inject aws service into webservice
+	_logger.InjectedLogManager = &logging.LoggerConsole{}
+	aws := &infrastructure.AWSRepository{LogManager: *_logger}
+	do := &infrastructure.DigitalOceanRepository{LogManager: *_logger}
+
 	instanceHandlers := make(map[string]interfaces.IInstance)
 	instanceHandlers["aws"] = aws
 	instanceHandlers["digitalocean"] = do
-	_webserviceHandler.IInstance = instanceHandlers
+	_webserviceHandler.Instance = instanceHandlers
 	// Inject logger into webservice
-	_webserviceHandler.ILogger = *_logger
+	_webserviceHandler.LogManager = *_logger
 }
 
 func main() {
@@ -43,14 +41,14 @@ func main() {
 	signal.Notify(c, os.Interrupt)
 	go func() {
 		<-c
-		_logger.Info("Shutting down cloud-manager service...")
+		_logger.Log(domain.Info, "Shutting down cloud-manager service...")
 		os.Exit(0)
 	}()
 
 	router := mux.NewRouter()
 	router.HandleFunc("/instances", ListInstances).Methods("GET")
 
-	_logger.Info(fmt.Sprintf("cloud-manager service started on %s:%d\n\n", *_host, *_port))
+	_logger.Log(domain.Info, fmt.Sprintf("cloud-manager service started on %s:%d\n\n", *_host, *_port))
 	http.ListenAndServe(fmt.Sprintf("%s:%d", *_host, *_port), router)
 }
 
